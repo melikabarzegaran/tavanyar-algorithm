@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package io.github.melikabarzegaran.tavanyaralgorithm
+package io.github.melikabarzegaran.tavanyaralgorithm.algorithm
 
 import kotlin.math.*
 
@@ -37,7 +37,7 @@ internal suspend fun subsequenceDynamicTimeWarpingOf(
     lengthToleranceFactor: Float,
     interpolationStrategy: InterpolationStrategy,
     lowerBoundRadius: Float
-): SubsequenceDynamicTimeWarpingResult {
+): SubsequenceDynamicTimeWarpingReport {
 
     val n = candidate.size
     val m = query.size
@@ -97,7 +97,7 @@ internal suspend fun subsequenceDynamicTimeWarpingOf(
     val bestSubsequenceLength = bestSubsequenceEndInclusive - bestSubsequenceStart + 1
     val bestSubsequenceNormalizedCost = bestSubsequenceCost / bestSubsequenceLength
 
-    return SubsequenceDynamicTimeWarpingResult(
+    return SubsequenceDynamicTimeWarpingReport(
         bestSubsequenceStart,
         bestSubsequenceEndInclusive,
         bestSubsequenceNormalizedCost,
@@ -280,7 +280,7 @@ internal data class Envelope(
     }
 }
 
-internal data class SubsequenceDynamicTimeWarpingResult(
+internal data class SubsequenceDynamicTimeWarpingReport(
     val start: Int,
     val endInclusive: Int,
     val cost: Float,

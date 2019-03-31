@@ -24,9 +24,9 @@
 
 package io.github.melikabarzgaran.tavanyaralgorithm
 
-import io.github.melikabarzegaran.tavanyaralgorithm.euclideanDistanceOf
-import io.github.melikabarzegaran.tavanyaralgorithm.manhattanDistanceOf
-import io.github.melikabarzegaran.tavanyaralgorithm.squaredEuclideanDistanceOf
+import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.euclideanDistanceOf
+import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.manhattanDistanceOf
+import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.squaredEuclideanDistanceOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

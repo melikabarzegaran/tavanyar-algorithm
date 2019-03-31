@@ -22,35 +22,9 @@
  * SOFTWARE.
  */
 
-package io.github.melikabarzegaran.tavanyaralgorithm
+package io.github.melikabarzegaran.tavanyaralgorithm.util
 
-import kotlin.math.abs
-import kotlin.math.pow
-import kotlin.math.sqrt
+import kotlinx.coroutines.Dispatchers
 
-fun manhattanDistanceOf(x: FloatArray, y: FloatArray): Float {
-    val n = x.size
-    var sum = 0f
-    for (i in 0 until n) {
-        sum += abs(x[i] - y[i])
-    }
-    return sum
-}
-
-fun euclideanDistanceOf(x: FloatArray, y: FloatArray): Float {
-    val n = x.size
-    var sum = 0f
-    for (i in 0 until n) {
-        sum += (x[i] - y[i]).pow(2)
-    }
-    return sqrt(sum)
-}
-
-fun squaredEuclideanDistanceOf(x: FloatArray, y: FloatArray): Float {
-    val n = x.size
-    var sum = 0f
-    for (i in 0 until n) {
-        sum += (x[i] - y[i]).pow(2)
-    }
-    return sum
-}
+internal val uiDispatcher = Dispatchers.Main
+internal val bgDispatcher = Dispatchers.IO

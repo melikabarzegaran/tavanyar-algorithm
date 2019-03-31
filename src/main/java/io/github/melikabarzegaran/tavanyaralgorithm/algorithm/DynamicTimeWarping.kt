@@ -22,8 +22,9 @@
  * SOFTWARE.
  */
 
-package io.github.melikabarzegaran.tavanyaralgorithm
+package io.github.melikabarzegaran.tavanyaralgorithm.algorithm
 
+import io.github.melikabarzegaran.tavanyaralgorithm.util.bgDispatcher
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
