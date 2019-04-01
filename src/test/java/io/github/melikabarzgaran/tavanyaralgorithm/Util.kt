@@ -24,4 +24,27 @@
 
 package io.github.melikabarzgaran.tavanyaralgorithm
 
+import java.io.BufferedReader
+import java.io.FileReader
+
 internal fun FloatArray.to2D() = map { floatArrayOf(it) }.toTypedArray()
+
+internal fun readData(
+    path: String,
+    hasTimeLabel: Boolean = false
+): Array<FloatArray> {
+    val data = mutableListOf<FloatArray>()
+    BufferedReader(FileReader(path)).useLines { lines ->
+        lines.forEach { line ->
+            if (hasTimeLabel) {
+                line.drop(16)
+            } else {
+                line
+            }.split(",")
+                .map { it.toFloat() }
+                .toFloatArray()
+                .also { data.add(it) }
+        }
+    }
+    return data.toTypedArray()
+}
