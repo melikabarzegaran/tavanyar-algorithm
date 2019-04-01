@@ -58,7 +58,7 @@ suspend fun PhysicalTherapySession.evaluateUsing(
     interpolationStrategy: InterpolationStrategy = InterpolationStrategy.TO_SMALLER,
     lowerBoundingRadius: Float = 0.1f,
     costThreshold: Float = 0.5f,
-    onNextIteration: (iterationNumber: Int) -> Unit = {},
+    onNextIteration: (iterationId: Int) -> Unit = {},
     onPhysicalTherapyExercisePatternFound: (pattern: PhysicalTherapyExercisePattern, calculations: PhysicalTherapyCalculationsPerformanceReport) -> Unit = { _, _ -> },
     onBestInIterationPhysicalTherapyExercisePatternChosen: (pattern: PhysicalTherapyExercisePattern, calculations: PhysicalTherapyCalculationsPerformanceReport) -> Unit = { _, _ -> },
     onFinished: (timeInMilliseconds: Long) -> Unit = {}
@@ -168,14 +168,14 @@ private suspend fun classify(
     interpolationStrategy: InterpolationStrategy,
     lowerBoundingRadius: Float,
     costThreshold: Float,
-    onNextIteration: (iterationNumber: Int) -> Unit = {},
+    onNextIteration: (iterationId: Int) -> Unit = {},
     onPhysicalTherapyExercisePatternFound: (pattern: PhysicalTherapyExercisePattern, calculations: PhysicalTherapyCalculationsPerformanceReport) -> Unit = { _, _ -> },
     onBestInIterationPhysicalTherapyExercisePatternFound: (pattern: PhysicalTherapyExercisePattern, calculations: PhysicalTherapyCalculationsPerformanceReport) -> Unit = { _, _ -> },
     onFinished: (timeInMilliseconds: Long) -> Unit = {}
 ): PhysicalTherapyTechnicalReport {
     return coroutineScope {
 
-        var iterationNumber = 0
+        var iterationId = 0
         val physicalTherapyExercisePatternList = mutableListOf<PhysicalTherapyExercisePattern>()
         var numberOfPrunedOutCalculations = 0L
         var numberOfNotPrunedOutCalculations = 0L
@@ -185,9 +185,9 @@ private suspend fun classify(
         while (true) {
             /*
             Start the iteration.
-            Notify observers of iteration number.
+            Notify observers of iteration id.
              */
-            onNextIteration(iterationNumber++)
+            onNextIteration(iterationId++)
 
             /*
             Search for each physical therapy exercise in the physical therapy session.

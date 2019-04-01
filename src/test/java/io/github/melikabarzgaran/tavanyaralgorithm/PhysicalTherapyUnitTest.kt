@@ -77,8 +77,8 @@ class PhysicalTherapyUnitTest {
             When
              */
             val report = physicalTherapySession.evaluateUsing(physicalTherapyExerciseList,
-                onNextIteration = { iterationNumber ->
-                    println("Iteration #$iterationNumber...")
+                onNextIteration = { iterationId ->
+                    println("Iteration #$iterationId...")
                 },
                 onPhysicalTherapyExercisePatternFound = { _, _ ->
                     println("Pattern found.")
