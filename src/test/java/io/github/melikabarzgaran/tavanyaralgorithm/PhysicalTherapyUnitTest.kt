@@ -40,7 +40,7 @@ class PhysicalTherapyUnitTest {
              */
             val basePath = "src/test/resources/dataset/"
 
-            val subjectNumber = 2
+            val subjectId = 2
             val numberOfExerciseTypes = 3
             val numberOfExerciseExecutions = 3
             val physicalTherapyExerciseTypeList = listOf(
@@ -54,22 +54,22 @@ class PhysicalTherapyUnitTest {
                 PhysicalTherapyExerciseExecution(2, "Low Amplitude", false)
             )
             val physicalTherapyExerciseList = mutableListOf<PhysicalTherapyExercise>()
-            for (exerciseTypeNumber in 0 until numberOfExerciseTypes) {
-                for (exerciseExecutionNumber in 0 until numberOfExerciseExecutions) {
+            for (exerciseTypeId in 0 until numberOfExerciseTypes) {
+                for (exerciseExecutionId in 0 until numberOfExerciseExecutions) {
                     val path =
-                        "${basePath}exercise-subject$subjectNumber-type$exerciseTypeNumber-execution$exerciseExecutionNumber.csv"
+                        "${basePath}exercise-subject$subjectId-type$exerciseTypeId-execution$exerciseExecutionId.csv"
                     val data = readData(path, hasTimeLabel = true)
                     physicalTherapyExerciseList += PhysicalTherapyExercise(
-                        physicalTherapyExerciseTypeList[exerciseTypeNumber],
-                        physicalTherapyExerciseExecutionList[exerciseExecutionNumber],
+                        physicalTherapyExerciseTypeList[exerciseTypeId],
+                        physicalTherapyExerciseExecutionList[exerciseExecutionId],
                         data
                     )
                 }
             }
 
-            val sessionTypeNumber = 0
-            val sessionSetNumber = 0
-            val path = "${basePath}session-subject$subjectNumber-type$sessionTypeNumber-set$sessionSetNumber.csv"
+            val sessionTypeId = 0
+            val sessionSetId = 0
+            val path = "${basePath}session-subject$subjectId-type$sessionTypeId-set$sessionSetId.csv"
             val data = readData(path, hasTimeLabel = true)
             val physicalTherapySession = PhysicalTherapySession(data)
 
