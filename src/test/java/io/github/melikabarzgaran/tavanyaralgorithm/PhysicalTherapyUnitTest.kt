@@ -29,8 +29,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.BufferedReader
-import java.io.FileReader
 
 class PhysicalTherapyUnitTest {
 
@@ -40,59 +38,40 @@ class PhysicalTherapyUnitTest {
             /*
             Given
              */
-            val subject = 3
-            val type = 1
-            val set = 1
-
             val basePath = "src/test/resources/dataset/"
 
-            val numberOfTypes = 3
-            val numberOfExecutions = 3
-            val typeDescriptions = mapOf(
-                0 to "Left Elbow Flexion/Extension",
-                1 to "Left Shoulder Abduction/Adduction",
-                2 to "Left Shoulder Flexion/Extension"
+            val subjectNumber = 2
+            val numberOfExerciseTypes = 3
+            val numberOfExerciseExecutions = 3
+            val physicalTherapyExerciseTypeList = listOf(
+                PhysicalTherapyExerciseType(0, "Left Elbow Flexion/Extension"),
+                PhysicalTherapyExerciseType(1, "Left Shoulder Abduction/Adduction"),
+                PhysicalTherapyExerciseType(2, "Left Shoulder Flexion/Extension")
             )
-            val executionDescriptions = mapOf(
-                0 to "Correct",
-                1 to "Fast",
-                2 to "Low Amplitude"
+            val physicalTherapyExerciseExecutionList = listOf(
+                PhysicalTherapyExerciseExecution(0, "Correct", true),
+                PhysicalTherapyExerciseExecution(1, "Fast", false),
+                PhysicalTherapyExerciseExecution(2, "Low Amplitude", false)
             )
             val physicalTherapyExerciseList = mutableListOf<PhysicalTherapyExercise>()
-            for (typeNumber in 1..numberOfTypes) {
-                for (executionNumber in 1..numberOfExecutions) {
-                    val path = "${basePath}candidate-subject$subject-type$typeNumber-execution$executionNumber.csv"
+            for (exerciseTypeNumber in 0 until numberOfExerciseTypes) {
+                for (exerciseExecutionNumber in 0 until numberOfExerciseExecutions) {
+                    val path =
+                        "${basePath}exercise-subject$subjectNumber-type$exerciseTypeNumber-execution$exerciseExecutionNumber.csv"
                     val data = readData(path, hasTimeLabel = true)
-
-                    val typeId = typeNumber - 1
-                    val typeDescription = typeDescriptions[typeId] ?: throw Exception()
-                    val physicalTherapyExerciseType =
-                        PhysicalTherapyExerciseType(
-                            typeId,
-                            typeDescription
-                        )
-
-                    val executionId = executionNumber - 1
-                    val executionDescription = executionDescriptions[executionId] ?: throw Exception()
-                    val physicalTherapyExerciseExecution =
-                        PhysicalTherapyExerciseExecution(
-                            executionId,
-                            executionDescription,
-                            executionNumber == 1
-                        )
-
                     physicalTherapyExerciseList += PhysicalTherapyExercise(
-                        physicalTherapyExerciseType,
-                        physicalTherapyExerciseExecution,
+                        physicalTherapyExerciseTypeList[exerciseTypeNumber],
+                        physicalTherapyExerciseExecutionList[exerciseExecutionNumber],
                         data
                     )
                 }
             }
 
-            val path = "${basePath}query-subject$subject-type$type-$set.csv"
+            val sessionTypeNumber = 0
+            val sessionSetNumber = 0
+            val path = "${basePath}session-subject$subjectNumber-type$sessionTypeNumber-set$sessionSetNumber.csv"
             val data = readData(path, hasTimeLabel = true)
-            val physicalTherapySession =
-                PhysicalTherapySession(data)
+            val physicalTherapySession = PhysicalTherapySession(data)
 
             /*
             When
@@ -104,7 +83,7 @@ class PhysicalTherapyUnitTest {
                 onPhysicalTherapyExercisePatternFound = { _, _ ->
                     println("Pattern found.")
                 },
-                onBestInIterationPhysicalTherapyExercisePatternChosen = { pattern, _ ->
+                onBestInIterationPhysicalTherapyExercisePatternChosen = { _, _ ->
                     println("Best pattern chosen.")
                 },
                 onFinished = { timeInMilliseconds ->
@@ -189,11 +168,7 @@ class PhysicalTherapyUnitTest {
             assertEquals(1, types.size)
             assertTrue(types.all { it.key.id == 0 })
 
-            val physicalTherapyExerciseType = PhysicalTherapyExerciseType(
-                0,
-                typeDescriptions[0] ?: throw Exception("Should not happen.")
-            )
-            val typeReport = types[physicalTherapyExerciseType] ?: throw Exception("Should not happen.")
+            val typeReport = types[physicalTherapyExerciseTypeList[0]] ?: throw Exception("Should not happen.")
 
             assertEquals(15, typeReport.count.total)
             assertEquals(100, typeReport.count.totalPercentage)
@@ -207,32 +182,17 @@ class PhysicalTherapyUnitTest {
             assertEquals(3, executions.size)
             assertTrue(executions.all { it.key.id in 0..2 })
 
-            val physicalTherapyExerciseExecution1 = PhysicalTherapyExerciseExecution(
-                0,
-                executionDescriptions[0] ?: throw Exception("Should not happen."),
-                true
-            )
-            val executionReport1 = executions[physicalTherapyExerciseExecution1]
+            val executionReport1 = executions[physicalTherapyExerciseExecutionList[0]]
                 ?: throw Exception("Should not happen.")
             assertEquals(5, executionReport1.count.total)
             assertEquals(33, executionReport1.count.totalPercentage)
 
-            val physicalTherapyExerciseExecution2 = PhysicalTherapyExerciseExecution(
-                1,
-                executionDescriptions[1] ?: throw Exception("Should not happen."),
-                false
-            )
-            val executionReport2 = executions[physicalTherapyExerciseExecution2]
+            val executionReport2 = executions[physicalTherapyExerciseExecutionList[1]]
                 ?: throw Exception("Should not happen.")
             assertEquals(5, executionReport2.count.total)
             assertEquals(33, executionReport2.count.totalPercentage)
 
-            val physicalTherapyExerciseExecution3 = PhysicalTherapyExerciseExecution(
-                2,
-                executionDescriptions[2] ?: throw Exception("Should not happen."),
-                false
-            )
-            val executionReport3 = executions[physicalTherapyExerciseExecution3]
+            val executionReport3 = executions[physicalTherapyExerciseExecutionList[2]]
                 ?: throw Exception("Should not happen.")
             assertEquals(5, executionReport3.count.total)
             assertEquals(33, executionReport3.count.totalPercentage)
@@ -267,24 +227,4 @@ class PhysicalTherapyUnitTest {
                         + technicalReport.performance.calculations.notPrunedOut
             )
         }
-}
-
-private fun readData(
-    path: String,
-    hasTimeLabel: Boolean = false
-): Array<FloatArray> {
-    val data = mutableListOf<FloatArray>()
-    BufferedReader(FileReader(path)).useLines { lines ->
-        lines.forEach { line ->
-            if (hasTimeLabel) {
-                line.drop(16)
-            } else {
-                line
-            }.split(",")
-                .map { it.toFloat() }
-                .toFloatArray()
-                .also { data.add(it) }
-        }
-    }
-    return data.toTypedArray()
 }
