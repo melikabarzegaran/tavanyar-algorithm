@@ -48,3 +48,20 @@ internal fun readData(
     }
     return data.toTypedArray()
 }
+
+internal fun readLabelData(path: String): Array<IntArray> {
+    val data = mutableListOf<IntArray>()
+    BufferedReader(FileReader(path)).useLines { lines ->
+        lines.forEach { line ->
+            line.split(",")
+                .map { it.trim().toInt() }
+                .toIntArray()
+                .also { data.add(it) }
+        }
+    }
+    return data.toTypedArray()
+}
+
+internal fun Array<IntArray>.print() {
+    for (row in this) row.joinToString(transform = { String.format("%3d", it) }).also { println(it) }
+}

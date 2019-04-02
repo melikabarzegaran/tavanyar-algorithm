@@ -27,4 +27,14 @@ package io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.perfo
 data class PhysicalTherapyPerformanceReport(
     val calculations: PhysicalTherapyCalculationsPerformanceReport,
     val time: PhysicalTherapyTimePerformanceReport
-)
+) {
+    operator fun plus(other: PhysicalTherapyPerformanceReport): PhysicalTherapyPerformanceReport {
+        return PhysicalTherapyPerformanceReport(
+            PhysicalTherapyCalculationsPerformanceReport(
+                calculations.prunedOut + other.calculations.prunedOut,
+                calculations.notPrunedOut + other.calculations.notPrunedOut
+            ),
+            PhysicalTherapyTimePerformanceReport(time.totalInMilliseconds + other.time.totalInMilliseconds)
+        )
+    }
+}
