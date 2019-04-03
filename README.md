@@ -32,3 +32,4 @@ performance, and memory usage.
 9. Keogh, E. and Ratanamahatana, C.A., 2005. Exact indexing of dynamic time warping. *Knowledge and information systems, 7(3)*, pp.358-386.
 10. Rath, T.M. and Manmatha, R., 2002. Lower-bounding of dynamic time warping distances for multivariate time series. *University of Massachusetts Amherst, Tech. Rep*. MM-40.
 11. Fu, A.W.C., Keogh, E., Lau, L.Y., Ratanamahatana, C.A. and Wong, R.C.W., 2008. Scaling and time warping in time series querying. *The VLDB Journal—The International Journal on Very Large Data Bases, 17(4)*, pp.899-921.
+12. Sokolova, M. and Lapalme, G., 2009. A systematic analysis of performance measures for classification tasks. *Information Processing & Management, 45(4)*, pp.427-437.
