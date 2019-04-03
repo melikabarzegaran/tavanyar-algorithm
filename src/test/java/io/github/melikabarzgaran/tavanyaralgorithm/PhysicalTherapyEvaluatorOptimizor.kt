@@ -27,7 +27,7 @@ package io.github.melikabarzgaran.tavanyaralgorithm
 import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.GeneralizationStrategy
 import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.InterpolationStrategy
 import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.LocalWeights
-import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.euclideanDistanceOf
+import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.squaredEuclideanDistanceOf
 import io.github.melikabarzegaran.tavanyaralgorithm.core.*
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.PhysicalTherapyReport
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.performance.PhysicalTherapyCalculationsPerformanceReport
@@ -39,15 +39,15 @@ import kotlin.math.roundToLong
 
 fun main() = runBlocking<Unit> {
     val result = optimizedHyperParametersOf(
-        distanceFunctionList = listOf(::euclideanDistanceOf),
+        distanceFunctionList = listOf(::squaredEuclideanDistanceOf),
         localWeightsList = listOf(LocalWeights.SYMMETRIC),
         globalConstraintWidthFactorList = listOf(0.1f),
         generalizationStrategyList = listOf(GeneralizationStrategy.DEPENDANT),
         downSamplingStepList = listOf(10),
         lengthToleranceFactorList = listOf(0.2f),
         interpolationStrategyList = listOf(InterpolationStrategy.TO_SMALLER),
-        lowerBoundingRadiusList = listOf(0.1f),
-        costThresholdList = listOf(0.5f),
+        lowerBoundingRadiusList = listOf(0.00005f),
+        costThresholdList = listOf(0.4f),
         timeThresholdInMilliseconds = 15000
     )
 
@@ -124,10 +124,10 @@ private suspend fun optimizedHyperParametersOf(
                                         println("|")
                                         println("|---Distance function: $distanceFunction")
                                         println("|---Local weights: $localWeights")
-                                        println("|---Global constraint width factor: $globalConstraintWidthFactor%")
+                                        println("|---Global constraint width factor: $globalConstraintWidthFactor")
                                         println("|---Generalization strategy: $generalizationStrategy")
                                         println("|---Down sampling step: $downSamplingStep")
-                                        println("|---Length tolerance factor: $lengthToleranceFactor%")
+                                        println("|---Length tolerance factor: $lengthToleranceFactor")
                                         println("|---Interpolation strategy: $interpolationStrategy")
                                         println("|---Lower bounding radius: $lowerBoundingRadius")
                                         println("|---Cost threshold: $costThreshold")
@@ -296,6 +296,10 @@ private suspend fun evaluationOf(
         println(performanceReportList[subjectId])
         println()
     }
+
+    println("+===================================================================+")
+    println("| Total                                                             |")
+    println("+===================================================================+")
 
     println("Total confusion matrix (type, execution):")
     totalTypeAndExecutionConfusionMatrix.print()
