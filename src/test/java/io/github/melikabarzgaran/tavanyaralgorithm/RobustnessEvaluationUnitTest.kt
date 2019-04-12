@@ -24,6 +24,7 @@
 
 package io.github.melikabarzgaran.tavanyaralgorithm
 
+import binByFloat
 import io.github.melikabarzegaran.tavanyaralgorithm.core.*
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.PhysicalTherapyReport
 import kotlinx.coroutines.runBlocking
@@ -45,6 +46,7 @@ class RobustnessEvaluationUnitTest {
         )
         val sessionSetIdList = listOf(0, 1)
 
+        val totalReportList = mutableListOf<PhysicalTherapyReport>()
         val matrix = Array(subjectIdList.size) { i ->
             IntArray(exerciseTypeList.size) { j ->
                 val reportList = mutableListOf<PhysicalTherapyReport>()
@@ -57,10 +59,26 @@ class RobustnessEvaluationUnitTest {
                         sessionSetIdList[k]
                     )
                 }
+                totalReportList += reportList
                 reportList.map { it.analytical.count.total }.sum()
             }
         }
 
+        totalReportList.flatMap { it.technical.patternList.asIterable() }
+            .binByFloat(binSize = 0.1f, valueSelector = { it.cost }, rangeStart = 0f)
+            .also {
+                println("bins:")
+                it.forEach { bin -> println(bin) }
+                println()
+            }
+            .map { it.range to it.value.size }
+            .also {
+                println("bins count:")
+                it.forEach { binCount -> println(binCount) }
+                println()
+            }
+
+        println("robustness matrix:")
         matrix.print()
     }
 
