@@ -34,8 +34,16 @@ data class PhysicalTherapyCountReport(
         get() = total - correct
 
     val correctPercentage: Int
-        get() = (correct.toFloat() / total.toFloat() * 100f).roundToInt()
+        get() = try {
+            (correct.toFloat() / total.toFloat() * 100f).roundToInt()
+        } catch (e: IllegalArgumentException) {
+            0
+        }
 
     val wrongPercentage: Int
-        get() = (wrong.toFloat() / total.toFloat() * 100f).roundToInt()
+        get() = try {
+            (wrong.toFloat() / total.toFloat() * 100f).roundToInt()
+        } catch (e: IllegalArgumentException) {
+            0
+        }
 }

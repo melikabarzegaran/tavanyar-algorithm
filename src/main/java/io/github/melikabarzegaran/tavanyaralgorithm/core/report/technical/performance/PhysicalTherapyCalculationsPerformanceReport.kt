@@ -32,5 +32,9 @@ data class PhysicalTherapyCalculationsPerformanceReport(
         get() = prunedOut + notPrunedOut
 
     val gainPercentage: Int
-        get() = (prunedOut.toFloat() / total.toFloat() * 100f).toInt()
+        get() = try {
+            (prunedOut.toFloat() / total.toFloat() * 100f).toInt()
+        } catch (e: IllegalArgumentException) {
+            0
+        }
 }

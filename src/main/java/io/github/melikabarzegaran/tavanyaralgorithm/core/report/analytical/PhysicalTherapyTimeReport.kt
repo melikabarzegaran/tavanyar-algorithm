@@ -34,8 +34,16 @@ data class PhysicalTherapyTimeReport(
         get() = totalInMilliseconds - activeInMilliseconds
 
     val activePercentage: Int
-        get() = (activeInMilliseconds.toFloat() / totalInMilliseconds.toFloat() * 100f).roundToInt()
+        get() = try {
+            (activeInMilliseconds.toFloat() / totalInMilliseconds.toFloat() * 100f).roundToInt()
+        } catch (e: IllegalArgumentException) {
+            0
+        }
 
     val inactivePercentage: Int
-        get() = (inactiveInMilliseconds.toFloat() / totalInMilliseconds.toFloat() * 100f).roundToInt()
+        get() = try {
+            (inactiveInMilliseconds.toFloat() / totalInMilliseconds.toFloat() * 100f).roundToInt()
+        } catch (e: IllegalArgumentException) {
+            0
+        }
 }
