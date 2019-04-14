@@ -80,10 +80,10 @@ class PhysicalTherapyUnitTest {
                 onNextIteration = { iterationId ->
                     println("Iteration #$iterationId...")
                 },
-                onPhysicalTherapyExercisePatternFound = { _, _ ->
+                onPhysicalTherapyExercisePatternFound = { _ ->
                     println("Pattern found.")
                 },
-                onBestInIterationPhysicalTherapyExercisePatternChosen = { _, _ ->
+                onBestInIterationPhysicalTherapyExercisePatternChosen = { _ ->
                     println("Best pattern chosen.")
                 },
                 onFinished = { timeInMilliseconds ->
@@ -132,13 +132,7 @@ class PhysicalTherapyUnitTest {
                     appendln("|")
                     appendln("|---performance:")
                     appendln("|   |")
-                    appendln("|   |---calculations:")
-                    appendln("|   |   |---pruned out: ${performance.calculations.prunedOut}")
-                    appendln("|   |   |---not pruned out: ${performance.calculations.notPrunedOut}")
-                    appendln("|   |   |---total: ${performance.calculations.total}")
-                    appendln("|   |   |---gain: ${performance.calculations.gainPercentage}%")
-                    appendln("|   |")
-                    appendln("|   |---time: ${performance.time.totalInMilliseconds}ms")
+                    appendln("|   |---time: ${performance.timeInMilliseconds}ms")
                     appendln("|")
                     null
                 }
@@ -217,14 +211,5 @@ class PhysicalTherapyUnitTest {
             assertEquals(5, technicalReport.patternList.filter { it.execution.id == 0 }.count())
             assertEquals(5, technicalReport.patternList.filter { it.execution.id == 1 }.count())
             assertEquals(5, technicalReport.patternList.filter { it.execution.id == 2 }.count())
-
-            /*
-            Performance
-             */
-            assertEquals(
-                technicalReport.performance.calculations.total,
-                technicalReport.performance.calculations.prunedOut
-                        + technicalReport.performance.calculations.notPrunedOut
-            )
         }
 }

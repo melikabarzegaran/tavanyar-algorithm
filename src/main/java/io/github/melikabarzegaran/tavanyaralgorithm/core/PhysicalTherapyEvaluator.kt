@@ -24,7 +24,10 @@
 
 package io.github.melikabarzegaran.tavanyaralgorithm.core
 
-import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.*
+import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.LocalWeights
+import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.SubsequenceDynamicTimeWarpingReport
+import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.squaredEuclideanDistanceOf
+import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.subsequenceDynamicTimeWarpingOf
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.PhysicalTherapyReport
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.analytical.PhysicalTherapyAnalyticalReport
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.analytical.PhysicalTherapyCountReport
@@ -37,10 +40,9 @@ import io.github.melikabarzegaran.tavanyaralgorithm.core.report.analytical.type.
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.analytical.type.PhysicalTherapyExerciseTypeTimeReport
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.PhysicalTherapyTechnicalReport
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.pattern.PhysicalTherapyExercisePattern
+import io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.pattern.PhysicalTherapyExercisePatternIndexed
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.pattern.PhysicalTherapyExercisePatternRange
-import io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.performance.PhysicalTherapyCalculationsPerformanceReport
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.performance.PhysicalTherapyPerformanceReport
-import io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.performance.PhysicalTherapyTimePerformanceReport
 import io.github.melikabarzegaran.tavanyaralgorithm.util.bgDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -51,16 +53,12 @@ suspend fun PhysicalTherapySession.evaluateUsing(
     physicalTherapyExerciseList: List<PhysicalTherapyExercise>,
     distanceFunction: (FloatArray, FloatArray) -> Float = ::squaredEuclideanDistanceOf,
     localWeights: LocalWeights = LocalWeights.SYMMETRIC,
-    globalConstraintWidthFactor: Float = 0.1f,
-    generalizationStrategy: GeneralizationStrategy = GeneralizationStrategy.DEPENDANT,
-    downSamplingStep: Int = 10,
-    lengthToleranceFactor: Float = 0.2f,
-    interpolationStrategy: InterpolationStrategy = InterpolationStrategy.TO_SMALLER,
-    lowerBoundingRadius: Float = 0.00005f,
-    costThreshold: Float = 0.4f,
+    lengthToleranceFactor: Float = 0.4f,
+    overlappingFactor: Float = 0.05f,
+    costThreshold: Float = 0.5f,
     onNextIteration: (iterationId: Int) -> Unit = {},
-    onPhysicalTherapyExercisePatternFound: (pattern: PhysicalTherapyExercisePattern, calculations: PhysicalTherapyCalculationsPerformanceReport) -> Unit = { _, _ -> },
-    onBestInIterationPhysicalTherapyExercisePatternChosen: (pattern: PhysicalTherapyExercisePattern, calculations: PhysicalTherapyCalculationsPerformanceReport) -> Unit = { _, _ -> },
+    onPhysicalTherapyExercisePatternFound: (pattern: PhysicalTherapyExercisePattern) -> Unit = {},
+    onBestInIterationPhysicalTherapyExercisePatternChosen: (pattern: PhysicalTherapyExercisePattern) -> Unit = {},
     onFinished: (timeInMilliseconds: Long) -> Unit = {}
 ): PhysicalTherapyReport {
     val dataset = getDataset(physicalTherapyExerciseList)
@@ -83,12 +81,8 @@ suspend fun PhysicalTherapySession.evaluateUsing(
         normalizedPhysicalTherapySession,
         distanceFunction,
         localWeights,
-        globalConstraintWidthFactor,
-        generalizationStrategy,
-        downSamplingStep,
         lengthToleranceFactor,
-        interpolationStrategy,
-        lowerBoundingRadius,
+        overlappingFactor,
         costThreshold,
         onNextIteration = onNextIteration,
         onPhysicalTherapyExercisePatternFound = onPhysicalTherapyExercisePatternFound,
@@ -161,166 +155,121 @@ private suspend fun classify(
     physicalTherapySession: PhysicalTherapySession,
     distanceFunction: (FloatArray, FloatArray) -> Float,
     localWeights: LocalWeights,
-    globalConstraintWidthFactor: Float,
-    generalizationStrategy: GeneralizationStrategy,
-    downSamplingStep: Int,
     lengthToleranceFactor: Float,
-    interpolationStrategy: InterpolationStrategy,
-    lowerBoundingRadius: Float,
+    overlappingFactor: Float,
     costThreshold: Float,
     onNextIteration: (iterationId: Int) -> Unit = {},
-    onPhysicalTherapyExercisePatternFound: (pattern: PhysicalTherapyExercisePattern, calculations: PhysicalTherapyCalculationsPerformanceReport) -> Unit = { _, _ -> },
-    onBestInIterationPhysicalTherapyExercisePatternFound: (pattern: PhysicalTherapyExercisePattern, calculations: PhysicalTherapyCalculationsPerformanceReport) -> Unit = { _, _ -> },
+    onPhysicalTherapyExercisePatternFound: (pattern: PhysicalTherapyExercisePattern) -> Unit = {},
+    onBestInIterationPhysicalTherapyExercisePatternFound: (pattern: PhysicalTherapyExercisePattern) -> Unit = {},
     onFinished: (timeInMilliseconds: Long) -> Unit = {}
 ): PhysicalTherapyTechnicalReport {
     return coroutineScope {
 
+        val xArray = physicalTherapyExerciseList.map { it.data }
+        val y = physicalTherapySession.data
+
+        val alpha = lengthToleranceFactor.coerceIn(0.01f, 0.99f)
+        val beta = overlappingFactor.coerceIn(0.01f, 0.99f)
+        val gamma = costThreshold.coerceAtLeast(0f)
+
+        val k = xArray.size
+        val nArray = xArray.map { it.size }
+        val m = y.size
+        val yArray = Array(k) { y.map { it.clone() }.toTypedArray() }
+
         var iterationId = 0
-        val physicalTherapyExercisePatternList = mutableListOf<PhysicalTherapyExercisePattern>()
-        var numberOfPrunedOutCalculations = 0L
-        var numberOfNotPrunedOutCalculations = 0L
+        val patternList = mutableListOf<PhysicalTherapyExercisePattern>()
         val startTime = System.currentTimeMillis()
-        val timeTaken: Long
 
         while (true) {
-            /*
-            Start the iteration.
-            Notify observers of iteration id.
-             */
+
             onNextIteration(iterationId++)
 
-            /*
-            Search for each physical therapy exercise in the physical therapy session.
-            Gather physical therapy search reports.
-            Notify observers of each search report.
-             */
-            val physicalTherapySearchReportList: List<PhysicalTherapySearchReport> =
-                Array(physicalTherapyExerciseList.size) { index ->
+            val patternIndexedList: List<PhysicalTherapyExercisePatternIndexed> =
+                Array(k) { index ->
                     async(bgDispatcher) {
-                        val physicalTherapyExercise = physicalTherapyExerciseList[index]
-                        val subsequenceDynamicTimeWarpingReport =
-                            subsequenceDynamicTimeWarpingOf(
-                                physicalTherapyExercise.data,
-                                physicalTherapySession.data,
-                                distanceFunction,
-                                localWeights,
-                                globalConstraintWidthFactor,
-                                generalizationStrategy,
-                                downSamplingStep,
-                                lengthToleranceFactor,
-                                interpolationStrategy,
-                                lowerBoundingRadius
-                            )
-                        PhysicalTherapySearchReport.of(
-                            physicalTherapyExercise,
-                            subsequenceDynamicTimeWarpingReport
-                        ).also {
-                            onPhysicalTherapyExercisePatternFound(
-                                it.pattern,
-                                it.performance
-                            )
-                        }
+                        val exercise = physicalTherapyExerciseList[index]
+
+                        val xk = xArray[index]
+                        val yk = yArray[index]
+
+                        val report = subsequenceDynamicTimeWarpingOf(
+                            xk,
+                            yk,
+                            distanceFunction,
+                            localWeights
+                        )
+
+                        val cost = report.cost
+
+                        report.copy(cost = cost / nArray[index])
+                            .toPattern(exercise)
+                            .also { onPhysicalTherapyExercisePatternFound(it) }
+                            .toPatternIndexed(index)
                     }
                 }.toList().awaitAll()
 
-            /*
-            Choose the best physical therapy exercise pattern found in searches of the iteration.
-             */
-            val bestPhysicalTherapyExercisePattern = physicalTherapySearchReportList.minBy { it.pattern.cost }?.pattern
+            val bestPatternIndexed = patternIndexedList.minBy { it.cost }
 
-            /*
-            If there is no best physical therapy exercise pattern or it doesn't satisfy necessary conditions,
-            then finish iterating and notify observers of the time taken.
-             */
-            if (bestPhysicalTherapyExercisePattern == null || bestPhysicalTherapyExercisePattern.cost > costThreshold) {
-                val endTime = System.currentTimeMillis()
-                timeTaken = endTime - startTime
-                onFinished(timeTaken)
-                break
+            if (bestPatternIndexed == null || bestPatternIndexed.cost >= gamma) break
+
+            val start = bestPatternIndexed.range.start
+            val endInclusive = bestPatternIndexed.range.endInclusive
+
+            val approx = bestPatternIndexed.range.length * beta
+            var startApprox = (start + approx).roundToInt().coerceIn(0, m - 1)
+            var endInclusiveApprox = (endInclusive - approx).roundToInt().coerceIn(0, m - 1)
+            if (startApprox >= endInclusiveApprox) {
+                startApprox = start
+                endInclusiveApprox = endInclusive
             }
 
-            /*
-            Otherwise, add the best physical therapy exercise pattern to the list.
-             */
-            physicalTherapyExercisePatternList.add(bestPhysicalTherapyExercisePattern)
+            val minLength = ((1 - alpha) * nArray[bestPatternIndexed.index]).roundToInt()
+            val maxLength = ((1 + alpha) * nArray[bestPatternIndexed.index]).roundToInt()
 
-            /*
-            Be sure that we won't be searching the same part again in the next iterations.
-             */
-            val physicalTherapySessionPart =
-                physicalTherapySession.data.sliceArray(bestPhysicalTherapyExercisePattern.range.start..bestPhysicalTherapyExercisePattern.range.endInclusive)
-            for (row in 0 until physicalTherapySessionPart.size) {
-                for (col in 0 until physicalTherapySessionPart[row].size) {
-                    physicalTherapySessionPart[row][col] = Float.POSITIVE_INFINITY
+            if (bestPatternIndexed.range.length in minLength..maxLength) {
+                patternList.add(bestPatternIndexed.toPattern())
+                for (yk in yArray) {
+                    yk.fill(startApprox, endInclusiveApprox, Float.POSITIVE_INFINITY)
                 }
+            } else {
+                val yk = yArray[bestPatternIndexed.index]
+                yk.fill(startApprox, endInclusiveApprox, Float.POSITIVE_INFINITY)
             }
 
-            /*
-            Notify observers of the best physical therapy exercise pattern found in the iteration.
-             */
-            numberOfPrunedOutCalculations += physicalTherapySearchReportList
-                .sumBy { it.performance.prunedOut.toInt() }
-
-            numberOfNotPrunedOutCalculations += physicalTherapySearchReportList
-                .sumBy { it.performance.notPrunedOut.toInt() }
-
-            val calculations =
-                PhysicalTherapyCalculationsPerformanceReport(
-                    numberOfPrunedOutCalculations,
-                    numberOfNotPrunedOutCalculations
-                )
-
-            onBestInIterationPhysicalTherapyExercisePatternFound(bestPhysicalTherapyExercisePattern, calculations)
+            onBestInIterationPhysicalTherapyExercisePatternFound(bestPatternIndexed.toPattern())
         }
 
-        /*
-        Return a technical report containing all the physical therapy exercise patterns found in the physical therapy session.
-         */
+        val endTime = System.currentTimeMillis()
+        val timeTaken = endTime - startTime
+        onFinished(timeTaken)
+
         PhysicalTherapyTechnicalReport(
-            physicalTherapyExercisePatternList,
-            PhysicalTherapyPerformanceReport(
-                PhysicalTherapyCalculationsPerformanceReport(
-                    numberOfPrunedOutCalculations,
-                    numberOfNotPrunedOutCalculations
-                ),
-                PhysicalTherapyTimePerformanceReport(
-                    timeTaken
-                )
-            )
+            patternList,
+            PhysicalTherapyPerformanceReport(timeTaken)
         )
     }
 }
 
-private data class PhysicalTherapySearchReport(
-    val pattern: PhysicalTherapyExercisePattern,
-    val performance: PhysicalTherapyCalculationsPerformanceReport
-) {
-    companion object {
-        fun of(
-            physicalTherapyExercise: PhysicalTherapyExercise,
-            subsequenceDynamicTimeWarpingReport: SubsequenceDynamicTimeWarpingReport
-        ): PhysicalTherapySearchReport {
-            val physicalTherapyExercisePattern =
-                PhysicalTherapyExercisePattern(
-                    physicalTherapyExercise.type,
-                    physicalTherapyExercise.execution,
-                    PhysicalTherapyExercisePatternRange(
-                        subsequenceDynamicTimeWarpingReport.start,
-                        subsequenceDynamicTimeWarpingReport.endInclusive
-                    ),
-                    subsequenceDynamicTimeWarpingReport.cost
-                )
+private fun SubsequenceDynamicTimeWarpingReport.toPattern(
+    physicalTherapyExercise: PhysicalTherapyExercise
+): PhysicalTherapyExercisePattern {
+    return PhysicalTherapyExercisePattern(
+        physicalTherapyExercise.type,
+        physicalTherapyExercise.execution,
+        PhysicalTherapyExercisePatternRange(
+            start,
+            endInclusive
+        ),
+        cost
+    )
+}
 
-            val physicalTherapyCalculationsPerformanceReport =
-                PhysicalTherapyCalculationsPerformanceReport(
-                    subsequenceDynamicTimeWarpingReport.numberOfPrunedOutCalculations,
-                    subsequenceDynamicTimeWarpingReport.numberOfNotPrunedOutCalculations
-                )
-
-            return PhysicalTherapySearchReport(
-                physicalTherapyExercisePattern,
-                physicalTherapyCalculationsPerformanceReport
-            )
+private fun Array<FloatArray>.fill(start: Int, endInclusive: Int, value: Float) {
+    val slice = this.sliceArray(start..endInclusive)
+    for (row in 0 until slice.size) {
+        for (col in 0 until slice[row].size) {
+            slice[row][col] = value
         }
     }
 }

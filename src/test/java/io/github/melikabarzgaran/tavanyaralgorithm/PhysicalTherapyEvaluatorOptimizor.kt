@@ -24,15 +24,11 @@
 
 package io.github.melikabarzgaran.tavanyaralgorithm
 
-import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.GeneralizationStrategy
-import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.InterpolationStrategy
 import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.LocalWeights
 import io.github.melikabarzegaran.tavanyaralgorithm.algorithm.squaredEuclideanDistanceOf
 import io.github.melikabarzegaran.tavanyaralgorithm.core.*
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.PhysicalTherapyReport
-import io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.performance.PhysicalTherapyCalculationsPerformanceReport
 import io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.performance.PhysicalTherapyPerformanceReport
-import io.github.melikabarzegaran.tavanyaralgorithm.core.report.technical.performance.PhysicalTherapyTimePerformanceReport
 import kotlinx.coroutines.runBlocking
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
@@ -41,13 +37,9 @@ fun main() = runBlocking<Unit> {
     val result = optimizedHyperParametersOf(
         distanceFunctionList = listOf(::squaredEuclideanDistanceOf),
         localWeightsList = listOf(LocalWeights.SYMMETRIC),
-        globalConstraintWidthFactorList = listOf(0.1f),
-        generalizationStrategyList = listOf(GeneralizationStrategy.DEPENDANT),
-        downSamplingStepList = listOf(10),
-        lengthToleranceFactorList = listOf(0.2f),
-        interpolationStrategyList = listOf(InterpolationStrategy.TO_SMALLER),
-        lowerBoundingRadiusList = listOf(0.00005f),
-        costThresholdList = listOf(0.4f),
+        lengthToleranceFactorList = listOf(0.4f),
+        overlappingFactorList = listOf(0.05f),
+        costThresholdList = listOf(0.5f),
         timeThresholdInMilliseconds = 15000
     )
 
@@ -60,12 +52,8 @@ fun main() = runBlocking<Unit> {
             println("|")
             println("|---Distance function: ${hyperParameters.distanceFunction}")
             println("|---Local weights: ${hyperParameters.localWeights}")
-            println("|---Global constraint width factor: ${hyperParameters.globalConstraintWidthFactor}%")
-            println("|---Generalization strategy: ${hyperParameters.generalizationStrategy}")
-            println("|---Down sampling step: ${hyperParameters.downSamplingStep}")
-            println("|---Length tolerance factor: ${hyperParameters.lengthToleranceFactor}%")
-            println("|---Interpolation strategy: ${hyperParameters.interpolationStrategy}")
-            println("|---Lower bounding radius: ${hyperParameters.lowerBoundingRadius}")
+            println("|---Length tolerance factor: ${hyperParameters.lengthToleranceFactor}")
+            println("|---Overlapping factor: ${hyperParameters.overlappingFactor}")
             println("|---Cost threshold: ${hyperParameters.costThreshold}")
             println()
             println("+===================================================================+")
@@ -96,12 +84,8 @@ fun main() = runBlocking<Unit> {
 private suspend fun optimizedHyperParametersOf(
     distanceFunctionList: List<(FloatArray, FloatArray) -> Float>,
     localWeightsList: List<LocalWeights>,
-    globalConstraintWidthFactorList: List<Float>,
-    generalizationStrategyList: List<GeneralizationStrategy>,
-    downSamplingStepList: List<Int>,
     lengthToleranceFactorList: List<Float>,
-    interpolationStrategyList: List<InterpolationStrategy>,
-    lowerBoundingRadiusList: List<Float>,
+    overlappingFactorList: List<Float>,
     costThresholdList: List<Float>,
     timeThresholdInMilliseconds: Long
 ): OptimizedHyperParametersResult {
@@ -111,66 +95,46 @@ private suspend fun optimizedHyperParametersOf(
 
     for (distanceFunction in distanceFunctionList) {
         for (localWeights in localWeightsList) {
-            for (globalConstraintWidthFactor in globalConstraintWidthFactorList) {
-                for (generalizationStrategy in generalizationStrategyList) {
-                    for (downSamplingStep in downSamplingStepList) {
-                        for (lengthToleranceFactor in lengthToleranceFactorList) {
-                            for (interpolationStrategy in interpolationStrategyList) {
-                                for (lowerBoundingRadius in lowerBoundingRadiusList) {
-                                    for (costThreshold in costThresholdList) {
-                                        println("+===================================================================+")
-                                        println("| Running physical therapy evaluator with hyper parameters          |")
-                                        println("+===================================================================+")
-                                        println("|")
-                                        println("|---Distance function: $distanceFunction")
-                                        println("|---Local weights: $localWeights")
-                                        println("|---Global constraint width factor: $globalConstraintWidthFactor")
-                                        println("|---Generalization strategy: $generalizationStrategy")
-                                        println("|---Down sampling step: $downSamplingStep")
-                                        println("|---Length tolerance factor: $lengthToleranceFactor")
-                                        println("|---Interpolation strategy: $interpolationStrategy")
-                                        println("|---Lower bounding radius: $lowerBoundingRadius")
-                                        println("|---Cost threshold: $costThreshold")
-                                        println()
+            for (lengthToleranceFactor in lengthToleranceFactorList) {
+                for (overlappingFactor in overlappingFactorList) {
+                    for (costThreshold in costThresholdList) {
+                        println("+===================================================================+")
+                        println("| Running physical therapy evaluator with hyper parameters          |")
+                        println("+===================================================================+")
+                        println("|")
+                        println("|---Distance function: $distanceFunction")
+                        println("|---Local weights: $localWeights")
+                        println("|---Length tolerance factor: $lengthToleranceFactor")
+                        println("|---Overlapping factor: $overlappingFactor")
+                        println("|---Cost threshold: $costThreshold")
+                        println()
 
-                                        val evaluationResult = evaluationOf(
-                                            distanceFunction,
-                                            localWeights,
-                                            globalConstraintWidthFactor,
-                                            generalizationStrategy,
-                                            downSamplingStep,
-                                            lengthToleranceFactor,
-                                            interpolationStrategy,
-                                            lowerBoundingRadius,
-                                            costThreshold
-                                        )
+                        val evaluationResult = evaluationOf(
+                            distanceFunction,
+                            localWeights,
+                            lengthToleranceFactor,
+                            overlappingFactor,
+                            costThreshold
+                        )
 
-                                        println("+===================================================================+")
-                                        println("| Measures and performance                                          |")
-                                        println("+===================================================================+")
-                                        println("|")
-                                        println("|----Total micro f-score: ${evaluationResult.measure}%")
-                                        println("|----Average time: ${evaluationResult.timeInMilliseconds}ms")
-                                        println()
+                        println("+===================================================================+")
+                        println("| Measures and performance                                          |")
+                        println("+===================================================================+")
+                        println("|")
+                        println("|----Total micro f-score: ${evaluationResult.measure}%")
+                        println("|----Average time: ${evaluationResult.timeInMilliseconds}ms")
+                        println()
 
-                                        if (evaluationResult.measure > bestMeasure && evaluationResult.timeInMilliseconds <= timeThresholdInMilliseconds) {
-                                            bestHyperParameters = HyperParameters(
-                                                distanceFunction,
-                                                localWeights,
-                                                globalConstraintWidthFactor,
-                                                generalizationStrategy,
-                                                downSamplingStep,
-                                                lengthToleranceFactor,
-                                                interpolationStrategy,
-                                                lowerBoundingRadius,
-                                                costThreshold
-                                            )
-                                            bestMeasure = evaluationResult.measure
-                                            bestTimeInMilliseconds = evaluationResult.timeInMilliseconds
-                                        }
-                                    }
-                                }
-                            }
+                        if (evaluationResult.measure > bestMeasure && evaluationResult.timeInMilliseconds <= timeThresholdInMilliseconds) {
+                            bestHyperParameters = HyperParameters(
+                                distanceFunction,
+                                localWeights,
+                                lengthToleranceFactor,
+                                overlappingFactor,
+                                costThreshold
+                            )
+                            bestMeasure = evaluationResult.measure
+                            bestTimeInMilliseconds = evaluationResult.timeInMilliseconds
                         }
                     }
                 }
@@ -198,24 +162,16 @@ private sealed class OptimizedHyperParametersResult {
 private data class HyperParameters(
     val distanceFunction: (FloatArray, FloatArray) -> Float,
     val localWeights: LocalWeights,
-    val globalConstraintWidthFactor: Float,
-    val generalizationStrategy: GeneralizationStrategy,
-    val downSamplingStep: Int,
     val lengthToleranceFactor: Float,
-    val interpolationStrategy: InterpolationStrategy,
-    val lowerBoundingRadius: Float,
+    val overlappingFactor: Float,
     val costThreshold: Float
 )
 
 private suspend fun evaluationOf(
     distanceFunction: (FloatArray, FloatArray) -> Float,
     localWeights: LocalWeights,
-    globalConstraintWidthFactor: Float,
-    generalizationStrategy: GeneralizationStrategy,
-    downSamplingStep: Int,
     lengthToleranceFactor: Float,
-    interpolationStrategy: InterpolationStrategy,
-    lowerBoundingRadius: Float,
+    overlappingFactor: Float,
     costThreshold: Float
 ): EvaluationResult {
 
@@ -236,12 +192,8 @@ private suspend fun evaluationOf(
             subjectId,
             distanceFunction,
             localWeights,
-            globalConstraintWidthFactor,
-            generalizationStrategy,
-            downSamplingStep,
             lengthToleranceFactor,
-            interpolationStrategy,
-            lowerBoundingRadius,
+            overlappingFactor,
             costThreshold
         )
         val (typeAndExecutionConfusionMatrix, performanceReport) = confusionMatrixResult
@@ -323,7 +275,7 @@ private suspend fun evaluationOf(
 
     return EvaluationResult(
         totalTypeAndExecutionEvaluationReport.micro.f1Score,
-        totalPerformanceReport.time.totalInMilliseconds
+        totalPerformanceReport.timeInMilliseconds
     )
 }
 
@@ -371,13 +323,7 @@ private fun List<PhysicalTherapyPerformanceReport>.average(): PhysicalTherapyPer
     return this.reduce { sum, physicalTherapyPerformanceReport -> sum + physicalTherapyPerformanceReport }
         .let {
             PhysicalTherapyPerformanceReport(
-                PhysicalTherapyCalculationsPerformanceReport(
-                    (it.calculations.prunedOut.toFloat() / n).roundToLong(),
-                    (it.calculations.notPrunedOut.toFloat() / n).roundToLong()
-                ),
-                PhysicalTherapyTimePerformanceReport(
-                    (it.time.totalInMilliseconds.toFloat() / n).roundToLong()
-                )
+                (it.timeInMilliseconds.toFloat() / n).roundToLong()
             )
         }
 }
@@ -386,12 +332,8 @@ private suspend fun confusionMatrixOf(
     subjectId: Int,
     distanceFunction: (FloatArray, FloatArray) -> Float,
     localWeights: LocalWeights,
-    globalConstraintWidthFactor: Float,
-    generalizationStrategy: GeneralizationStrategy,
-    downSamplingStep: Int,
     lengthToleranceFactor: Float,
-    interpolationStrategy: InterpolationStrategy,
-    lowerBoundingRadius: Float,
+    overlappingFactor: Float,
     costThreshold: Float
 ): ConfusionMatrixResult {
     /*
@@ -442,12 +384,8 @@ private suspend fun confusionMatrixOf(
         reportList += session.evaluateUsing(exerciseList,
             distanceFunction,
             localWeights,
-            globalConstraintWidthFactor,
-            generalizationStrategy,
-            downSamplingStep,
             lengthToleranceFactor,
-            interpolationStrategy,
-            lowerBoundingRadius,
+            overlappingFactor,
             costThreshold,
             onNextIteration = { iterationNumber -> println("Subject #$subjectId, Session #$sessionId, Iteration #$iterationNumber...") }
         )

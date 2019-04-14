@@ -24,104 +24,76 @@
 
 package io.github.melikabarzegaran.tavanyaralgorithm.algorithm
 
-import io.github.melikabarzegaran.tavanyaralgorithm.util.bgDispatcher
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.roundToInt
-
-internal suspend fun dynamicTimeWarpingOf(
+internal fun accumulatedCostMatrixOf(
     x: Array<FloatArray>,
     y: Array<FloatArray>,
     distanceFunction: (FloatArray, FloatArray) -> Float,
-    localWeights: LocalWeights,
-    globalConstraintWidthFactor: Float,
-    generalizationStrategy: GeneralizationStrategy
-): Float {
-    return coroutineScope {
-        when (generalizationStrategy) {
-            GeneralizationStrategy.DEPENDANT -> {
-                dynamicTimeWarpingOf(
-                    x,
-                    y,
-                    distanceFunction,
-                    localWeights,
-                    globalConstraintWidthFactor
-                )
-            }
-            GeneralizationStrategy.INDEPENDENT -> {
-                val n = x.size
-                val m = y.size
-                val d = x[0].size
-
-                val costList = mutableListOf<Deferred<Float>>()
-                for (j in 0 until d) {
-                    val colX = Array(n) { i ->
-                        floatArrayOf(x[i][j])
-                    }
-                    val colY = Array(m) { i ->
-                        floatArrayOf(y[i][j])
-                    }
-                    costList += async(bgDispatcher) {
-                        dynamicTimeWarpingOf(
-                            colX,
-                            colY,
-                            distanceFunction,
-                            localWeights,
-                            globalConstraintWidthFactor
-                        )
-                    }
-                }
-
-                costList
-                    .awaitAll()
-                    .sum()
-            }
-        }
-    }
-}
-
-internal fun dynamicTimeWarpingOf(
-    x: Array<FloatArray>,
-    y: Array<FloatArray>,
-    distanceFunction: (FloatArray, FloatArray) -> Float,
-    localWeights: LocalWeights,
-    globalConstraintWidthFactor: Float
-): Float {
+    localWeights: LocalWeights
+): Array<FloatArray> {
     val n = x.size
     val m = y.size
 
-    val matrix = Array(2) {
-        FloatArray(m + 1) {
-            Float.POSITIVE_INFINITY
-        }
-    }
+    val matrix = Array(n + 1) { FloatArray(m + 1) }
+
     matrix[0][0] = 0f
 
-    val validGlobalConstraintWidthFactor = globalConstraintWidthFactor.coerceIn(0f, 1f)
-    val w = max(abs(n - m), ((max(n, m) - 1) * validGlobalConstraintWidthFactor).roundToInt())
-
-    var previousRow = 0
-    var currentRow = 1
-
     for (i in 1..n) {
-        matrix[currentRow].fill(Float.POSITIVE_INFINITY)
-        for (j in max(1, i - w)..min(m, i + w)) {
-            val distance = distanceFunction(x[i - 1], y[j - 1])
-            matrix[currentRow][j] = distance + minOf(
-                localWeights.wh * matrix[currentRow][j - 1],
-                localWeights.wv * matrix[previousRow][j],
-                localWeights.wd * matrix[previousRow][j - 1]
-            )
-        }
-        previousRow = currentRow.also { currentRow = previousRow }
+        matrix[i][0] = Float.POSITIVE_INFINITY
     }
 
-    return matrix[previousRow][m]
+    for (j in 1..m) {
+        matrix[0][j] = 0f
+    }
+
+    for (i in 1..n) {
+        for (j in 1..m) {
+            val distance = distanceFunction(x[i - 1], y[j - 1])
+            matrix[i][j] = distance + minOf(
+                localWeights.wh * matrix[i][j - 1],
+                localWeights.wv * matrix[i - 1][j],
+                localWeights.wd * matrix[i - 1][j - 1]
+            )
+        }
+    }
+
+    return matrix
+}
+
+internal fun optimalWarpingPathOf(
+    accumulatedCostMatrix: Array<FloatArray>,
+    endInclusive: Int
+): List<WarpingPathCell> {
+    val n = accumulatedCostMatrix.size - 1
+    val m = accumulatedCostMatrix[0].size - 1
+
+    var i = n
+    var j = endInclusive.coerceIn(1, m)
+    val optimalWarpingPath = mutableListOf<WarpingPathCell>()
+
+    while (i > 1) {
+        optimalWarpingPath += WarpingPathCell(i, j)
+        when {
+            j == 1 -> i--
+            else -> {
+                when (minOf(
+                    accumulatedCostMatrix[i][j - 1],
+                    accumulatedCostMatrix[i - 1][j],
+                    accumulatedCostMatrix[i - 1][j - 1]
+                )) {
+                    accumulatedCostMatrix[i - 1][j - 1] -> {
+                        i--
+                        j--
+                    }
+                    accumulatedCostMatrix[i - 1][j] -> i--
+                    accumulatedCostMatrix[i][j - 1] -> j--
+                }
+            }
+        }
+    }
+
+    optimalWarpingPath += WarpingPathCell(i, j)
+
+    return optimalWarpingPath.asReversed()
 }
 
 enum class LocalWeights(val wh: Int, val wv: Int, val wd: Int) {
@@ -129,7 +101,4 @@ enum class LocalWeights(val wh: Int, val wv: Int, val wd: Int) {
     ASYMMETRIC(1, 1, 2)
 }
 
-enum class GeneralizationStrategy {
-    DEPENDANT,
-    INDEPENDENT
-}
+internal data class WarpingPathCell(val xIndex: Int, val yIndex: Int)

@@ -32,4 +32,17 @@ data class PhysicalTherapyExercisePattern(
     val execution: PhysicalTherapyExerciseExecution,
     val range: PhysicalTherapyExercisePatternRange,
     val cost: Float
-)
+) {
+    internal fun toPatternIndexed(index: Int) =
+        PhysicalTherapyExercisePatternIndexed(index, type, execution, range, cost)
+}
+
+internal data class PhysicalTherapyExercisePatternIndexed(
+    val index: Int,
+    val type: PhysicalTherapyExerciseType,
+    val execution: PhysicalTherapyExerciseExecution,
+    val range: PhysicalTherapyExercisePatternRange,
+    val cost: Float
+) {
+    internal fun toPattern() = PhysicalTherapyExercisePattern(type, execution, range, cost)
+}

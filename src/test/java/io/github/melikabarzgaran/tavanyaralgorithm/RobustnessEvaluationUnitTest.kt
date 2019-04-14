@@ -64,6 +64,8 @@ class RobustnessEvaluationUnitTest {
             }
         }
 
+        if (totalReportList.flatMap { it.technical.patternList.asIterable() }.isEmpty()) return@runBlocking
+
         totalReportList.flatMap { it.technical.patternList.asIterable() }
             .binByFloat(binSize = 0.1f, valueSelector = { it.cost }, rangeStart = 0f)
             .also {
@@ -123,10 +125,10 @@ class RobustnessEvaluationUnitTest {
             onNextIteration = { iterationId ->
                 println("Iteration #$iterationId...")
             },
-            onPhysicalTherapyExercisePatternFound = { _, _ ->
+            onPhysicalTherapyExercisePatternFound = { _ ->
                 println("Pattern found.")
             },
-            onBestInIterationPhysicalTherapyExercisePatternChosen = { _, _ ->
+            onBestInIterationPhysicalTherapyExercisePatternChosen = { _ ->
                 println("Best pattern chosen.")
             },
             onFinished = { timeInMilliseconds ->
@@ -175,13 +177,7 @@ class RobustnessEvaluationUnitTest {
                 appendln("|")
                 appendln("|---performance:")
                 appendln("|   |")
-                appendln("|   |---calculations:")
-                appendln("|   |   |---pruned out: ${performance.calculations.prunedOut}")
-                appendln("|   |   |---not pruned out: ${performance.calculations.notPrunedOut}")
-                appendln("|   |   |---total: ${performance.calculations.total}")
-                appendln("|   |   |---gain: ${performance.calculations.gainPercentage}%")
-                appendln("|   |")
-                appendln("|   |---time: ${performance.time.totalInMilliseconds}ms")
+                appendln("|   |---time: ${performance.timeInMilliseconds}ms")
                 appendln("|")
                 null
             }
