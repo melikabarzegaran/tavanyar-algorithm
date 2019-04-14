@@ -53,9 +53,9 @@ suspend fun PhysicalTherapySession.evaluateUsing(
     physicalTherapyExerciseList: List<PhysicalTherapyExercise>,
     distanceFunction: (FloatArray, FloatArray) -> Float = ::squaredEuclideanDistanceOf,
     localWeights: LocalWeights = LocalWeights.SYMMETRIC,
-    lengthToleranceFactor: Float = 0.4f,
+    lengthToleranceFactor: Float = 0.5f,
     overlappingFactor: Float = 0.05f,
-    costThreshold: Float = 0.5f,
+    costThreshold: Float = 0.3f,
     onNextIteration: (iterationId: Int) -> Unit = {},
     onPhysicalTherapyExercisePatternFound: (pattern: PhysicalTherapyExercisePattern) -> Unit = {},
     onBestInIterationPhysicalTherapyExercisePatternChosen: (pattern: PhysicalTherapyExercisePattern) -> Unit = {},
@@ -174,7 +174,6 @@ private suspend fun classify(
 
         val k = xArray.size
         val nArray = xArray.map { it.size }
-        val m = y.size
         val yArray = Array(k) { y.map { it.clone() }.toTypedArray() }
 
         var iterationId = 0
@@ -213,21 +212,14 @@ private suspend fun classify(
 
             if (bestPatternIndexed == null || bestPatternIndexed.cost >= gamma) break
 
+            val minLength = (alpha * nArray[bestPatternIndexed.index]).roundToInt()
+
             val start = bestPatternIndexed.range.start
             val endInclusive = bestPatternIndexed.range.endInclusive
+            val startApprox = ((1 - beta) * start + beta * endInclusive).roundToInt()
+            val endInclusiveApprox = (beta * start + (1 - beta) * endInclusive).roundToInt()
 
-            val approx = bestPatternIndexed.range.length * beta
-            var startApprox = (start + approx).roundToInt().coerceIn(0, m - 1)
-            var endInclusiveApprox = (endInclusive - approx).roundToInt().coerceIn(0, m - 1)
-            if (startApprox >= endInclusiveApprox) {
-                startApprox = start
-                endInclusiveApprox = endInclusive
-            }
-
-            val minLength = ((1 - alpha) * nArray[bestPatternIndexed.index]).roundToInt()
-            val maxLength = ((1 + alpha) * nArray[bestPatternIndexed.index]).roundToInt()
-
-            if (bestPatternIndexed.range.length in minLength..maxLength) {
+            if (bestPatternIndexed.range.length >= minLength) {
                 patternList.add(bestPatternIndexed.toPattern())
                 for (yk in yArray) {
                     yk.fill(startApprox, endInclusiveApprox, Float.POSITIVE_INFINITY)

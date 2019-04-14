@@ -37,9 +37,9 @@ fun main() = runBlocking<Unit> {
     val result = optimizedHyperParametersOf(
         distanceFunctionList = listOf(::squaredEuclideanDistanceOf),
         localWeightsList = listOf(LocalWeights.SYMMETRIC),
-        lengthToleranceFactorList = listOf(0.4f),
+        lengthToleranceFactorList = listOf(0.5f),
         overlappingFactorList = listOf(0.05f),
-        costThresholdList = listOf(0.5f),
+        costThresholdList = listOf(0.3f),
         timeThresholdInMilliseconds = 15000
     )
 
