@@ -42,7 +42,9 @@ class RobustnessEvaluationUnitTest {
             PhysicalTherapyExerciseType(2, "Left Shoulder Flexion/Extension")
         )
         val exerciseExecutionList = listOf(
-            PhysicalTherapyExerciseExecution(0, "Correct", true)
+            PhysicalTherapyExerciseExecution(0, "Correct", true),
+            PhysicalTherapyExerciseExecution(1, "Fast", true),
+            PhysicalTherapyExerciseExecution(2, "Low Amplitude", true)
         )
         val sessionSetIdList = listOf(0, 1)
 

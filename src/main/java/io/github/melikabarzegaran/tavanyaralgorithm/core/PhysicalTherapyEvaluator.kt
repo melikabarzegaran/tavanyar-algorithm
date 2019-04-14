@@ -52,10 +52,10 @@ import kotlin.math.roundToInt
 suspend fun PhysicalTherapySession.evaluateUsing(
     physicalTherapyExerciseList: List<PhysicalTherapyExercise>,
     distanceFunction: (FloatArray, FloatArray) -> Float = ::squaredEuclideanDistanceOf,
-    localWeights: LocalWeights = LocalWeights.SYMMETRIC,
-    lengthToleranceFactor: Float = 0.5f,
+    localWeights: LocalWeights = LocalWeights.ASYMMETRIC,
+    lengthToleranceFactor: Float = 0.6f,
     overlappingFactor: Float = 0.05f,
-    costThreshold: Float = 0.3f,
+    costThreshold: Float = 0.5f,
     onNextIteration: (iterationId: Int) -> Unit = {},
     onPhysicalTherapyExercisePatternFound: (pattern: PhysicalTherapyExercisePattern) -> Unit = {},
     onBestInIterationPhysicalTherapyExercisePatternChosen: (pattern: PhysicalTherapyExercisePattern) -> Unit = {},

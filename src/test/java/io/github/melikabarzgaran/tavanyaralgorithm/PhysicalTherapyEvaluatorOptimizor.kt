@@ -36,10 +36,10 @@ import kotlin.math.roundToLong
 fun main() = runBlocking<Unit> {
     val result = optimizedHyperParametersOf(
         distanceFunctionList = listOf(::squaredEuclideanDistanceOf),
-        localWeightsList = listOf(LocalWeights.SYMMETRIC),
-        lengthToleranceFactorList = listOf(0.5f),
+        localWeightsList = listOf(LocalWeights.ASYMMETRIC),
+        lengthToleranceFactorList = listOf(0.6f),
         overlappingFactorList = listOf(0.05f),
-        costThresholdList = listOf(0.3f),
+        costThresholdList = listOf(0.5f),
         timeThresholdInMilliseconds = 15000
     )
 
