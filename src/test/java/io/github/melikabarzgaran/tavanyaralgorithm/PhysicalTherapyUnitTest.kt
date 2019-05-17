@@ -108,9 +108,9 @@ class PhysicalTherapyUnitTest {
                 }
                 with(report.analytical.time) {
                     appendln("|")
-                    appendln("|---time: ${totalInMilliseconds}ms")
-                    appendln("|   |---active: ${activeInMilliseconds}ms ($activePercentage%)")
-                    appendln("|   |---inactive: ${inactiveInMilliseconds}ms ($inactivePercentage%)")
+                    appendln("|---time: ${totalInMilliseconds}s")
+                    appendln("|   |---active: ${activeInMilliseconds}s ($activePercentage%)")
+                    appendln("|   |---inactive: ${inactiveInMilliseconds}s ($inactivePercentage%)")
                     null
                 }
                 @Suppress("NAME_SHADOWING")
@@ -119,13 +119,13 @@ class PhysicalTherapyUnitTest {
                     appendln("|---type(${type.id},${type.description}):")
                     appendln("|   |")
                     appendln("|   |---count: ${typeReport.count.total} (${typeReport.count.totalPercentage}%)")
-                    appendln("|   |---time: ${typeReport.time.totalInMilliseconds}ms (${typeReport.time.totalPercentage}%)")
+                    appendln("|   |---time: ${typeReport.time.totalInMilliseconds}s (${typeReport.time.totalPercentage}%)")
 
                     for ((execution, executionReport) in typeReport.executions.toList().sortedBy { it.first.id }) {
                         appendln("|   |")
                         appendln("|   |---execution(${execution.id}, ${execution.description}):")
                         appendln("|   |   |---count: ${executionReport.count.total} (${executionReport.count.totalPercentage}%)")
-                        appendln("|   |   |---time: ${executionReport.time.totalInMilliseconds}ms (${executionReport.time.totalPercentage}%)")
+                        appendln("|   |   |---time: ${executionReport.time.totalInMilliseconds}s (${executionReport.time.totalPercentage}%)")
                     }
                 }
                 with(report.technical) {
